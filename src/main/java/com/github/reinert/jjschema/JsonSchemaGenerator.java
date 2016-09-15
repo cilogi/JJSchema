@@ -26,14 +26,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.reinert.jjschema.exception.TypeException;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 /**
  * Generates JSON schema from Java Types
@@ -41,6 +38,7 @@ import java.util.Map.Entry;
  * @author reinert
  */
 public abstract class JsonSchemaGenerator {
+    static final Logger LOG = Logger.getLogger(JsonSchemaGenerator.class.getName());
 
     private static final String TAG_PROPERTIES = "properties";
     private static final String TAG_REQUIRED = "required";
@@ -272,12 +270,18 @@ public abstract class JsonSchemaGenerator {
         schema.put(TAG_TYPE, TAG_ARRAY);
         Class<?> genericClass = null;
         if (method != null) {
+            LOG.info("Method " + method.toString());
             Type methodType = method.getGenericReturnType();
             if (!ParameterizedType.class.isAssignableFrom(methodType.getClass())) {
                 throw new TypeException("Collection property must be parameterized: " + method.getName());
             }
             ParameterizedType genericType = (ParameterizedType)methodType;
-            genericClass = (Class<?>) genericType.getActualTypeArguments()[0];
+            Type actualType = genericType.getActualTypeArguments()[0];
+            if (actualType instanceof Class) {
+                genericClass = (Class<?>) genericType.getActualTypeArguments()[0];
+            } else {
+                genericClass = Object.class;
+            }
         } else {
             genericClass = field.getClass();
         }
@@ -295,9 +299,12 @@ public abstract class JsonSchemaGenerator {
         for (Map.Entry<Method, Field> entry : props.entrySet()) {
             Field field = entry.getValue();
             Method method = entry.getKey();
-            ObjectNode prop = generatePropertySchema(type, method, field);
-            if (prop != null && field != null) {
-                addPropertyToSchema(schema, field, method, prop);
+            // Static properties aren't used
+            if (!Modifier.isStatic(method.getModifiers())) {
+                ObjectNode prop = generatePropertySchema(type, method, field);
+                if (prop != null && field != null) {
+                    addPropertyToSchema(schema, field, method, prop);
+                }
             }
         }
     }
@@ -326,10 +333,10 @@ public abstract class JsonSchemaGenerator {
 
         JsonManagedReference refAnn = propertyReflection.getAnnotation(JsonManagedReference.class);
         if (refAnn != null) {
-            ManagedReference fowardReference;
+            ManagedReference forwardReference;
             Class<?> genericClass;
             Class<?> collectionClass;
-            if (Collection.class.isAssignableFrom(returnType)) {
+            if (Util.isCollection(returnType)) {
                 if (method != null) {
                     ParameterizedType genericType = (ParameterizedType) method.getGenericReturnType();
                     genericClass = (Class<?>) genericType.getActualTypeArguments()[0];
@@ -340,15 +347,15 @@ public abstract class JsonSchemaGenerator {
             } else {
                 genericClass = returnType;
             }
-            fowardReference = new ManagedReference(type, refAnn.value(), genericClass);
+            forwardReference = new ManagedReference(type, refAnn.value(), genericClass);
 
-            if (!isFowardReferencePiled(fowardReference)) {
-                pushFowardReference(fowardReference);
+            if (!isFowardReferencePiled(forwardReference)) {
+                pushFowardReference(forwardReference);
             } else
 //        	if (isBackwardReferencePiled(fowardReference)) 
             {
-                boolean a = pullFowardReference(fowardReference);
-                boolean b = pullBackwardReference(fowardReference);
+                boolean a = pullFowardReference(forwardReference);
+                boolean b = pullBackwardReference(forwardReference);
                 //return null;
                 return createRefSchema("#");
             }
@@ -380,7 +387,7 @@ public abstract class JsonSchemaGenerator {
         }
 
 
-        if (Collection.class.isAssignableFrom(returnType)) {
+        if (Util.isCollection(returnType)) {
             processPropertyCollection(method, field, schema);
         } else {
             schema = generateSchema(returnType);
@@ -614,11 +621,16 @@ public abstract class JsonSchemaGenerator {
             }
         }
 
-        if (fieldName == null) {
-            return null;
-        }
+        return initialLower(fieldName);
+    }
 
-        fieldName = fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1);
-        return fieldName;
+    private String initialLower(String s) {
+        if (s == null || "".equals(s)) {
+            return null;
+        } else if (s.length()  == 1) {
+            return s.toLowerCase();
+        } else {
+            return s.substring(0, 1).toLowerCase() + s.substring(1);
+        }
     }
 }
