@@ -20,6 +20,7 @@
 
 package com.github.reinert.jjschema;
 
+import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,8 @@ class Util {
     private Util() {}
 
     static boolean isCollection(Class<?> type) {
-        return Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type);
+        return     Collection.class.isAssignableFrom(type)
+                || Map.class.isAssignableFrom(type)
+                || Multimap.class.isAssignableFrom(type);
     }
 }
