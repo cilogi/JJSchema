@@ -329,6 +329,14 @@ public abstract class JsonSchemaGenerator {
         if (ignoreAnn != null)
             return null;
 
+        JsonReference jsonRef = propertyReflection.getAnnotation(JsonReference.class);
+        if (jsonRef != null) {
+            String value = jsonRef.value();
+            if (value != null && !"".equals(value)) {
+                return createRefSchema(value);
+            }
+        }
+
         ObjectNode schema = createInstance();
 
         JsonManagedReference refAnn = propertyReflection.getAnnotation(JsonManagedReference.class);

@@ -1,6 +1,6 @@
 // Copyright (c) 2016 Cilogi. All Rights Reserved.
 //
-// File:        Util.java  (9/15/16)
+// File:        JsonReference.java  (9/30/16)
 // Author:      tim
 //
 // Copyright in the whole and every part of this source file belongs to
@@ -20,21 +20,13 @@
 
 package com.github.reinert.jjschema;
 
-import com.google.common.collect.Multimap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.util.Collection;
-import java.util.Map;
-
-
-class Util {
-    @SuppressWarnings("unused")
-    static final Logger LOG = LoggerFactory.getLogger(Util.class);
-
-    private Util() {}
-
-    static boolean isCollection(Class<?> type) {
-        return     Collection.class.isAssignableFrom(type);
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.FIELD})
+public @interface JsonReference {
+    String value() default "";
 }
