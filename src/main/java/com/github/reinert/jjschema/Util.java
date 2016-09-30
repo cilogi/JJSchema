@@ -20,21 +20,58 @@
 
 package com.github.reinert.jjschema;
 
-import com.google.common.collect.Multimap;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.fge.jackson.JacksonUtils;
+import com.github.reinert.jjschema.exception.TypeException;
+import com.google.common.base.Charsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Collection;
-import java.util.Map;
 
-
-class Util {
+public class Util {
     @SuppressWarnings("unused")
     static final Logger LOG = LoggerFactory.getLogger(Util.class);
 
     private Util() {}
 
     static boolean isCollection(Class<?> type) {
-        return     Collection.class.isAssignableFrom(type);
+        return Collection.class.isAssignableFrom(type);
+    }
+
+    public static void saveClass(Class clazz, File rootDir) throws TypeException, IOException {
+        JsonSchemaGenerator v4generator = SchemaGeneratorBuilder.draftV4Schema().build();
+        JsonNode productSchema = v4generator.generateSchema(clazz);
+        String s = JacksonUtils.prettyPrint(productSchema);
+        File file = new File(rootDir, nameOf(clazz) + ".json");
+        storeBytes(s.getBytes(Charsets.UTF_8), file);
+    }
+
+    private static void storeBytes(byte[] bytes, File file) throws IOException {
+        FileChannel dstChannel = new FileOutputStream(file).getChannel();
+        try {
+            ByteBuffer buf = ByteBuffer.wrap(bytes);
+            while (buf.hasRemaining()) {
+                dstChannel.write(buf);
+            }
+        }  finally {
+            dstChannel.close();
+        }
+    }
+
+    private static String nameOf(Class clazz) {
+        SchemaFileName ann = (SchemaFileName)clazz.getAnnotation(SchemaFileName.class);
+        if (ann != null) {
+            return ann.value();
+        } else {
+            String full = clazz.getName();
+            String[] sub = full.split("\\.");
+            return sub[sub.length-1];
+        }
     }
 }
