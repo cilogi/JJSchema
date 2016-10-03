@@ -145,9 +145,14 @@ public abstract class JsonSchemaGenerator {
     }
 
     public <T> ObjectNode generateSchema(Class<T> type) throws TypeException {
-        ObjectNode schema = createInstance();
-        schema = checkAndProcessType(type, schema);
-        return schema;
+        String refSchemaName = Util.refSchemaForClass(type);
+        if (refSchemaName == null) {
+            ObjectNode schema = createInstance();
+            schema = checkAndProcessType(type, schema);
+            return schema;
+        } else {
+            return createRefSchema(refSchemaName);
+        }
     }
 
     /**
@@ -266,7 +271,7 @@ public abstract class JsonSchemaGenerator {
         }
     }
 
-    private void processPropertyCollection(Method method, Field field, ObjectNode schema) throws TypeException {
+    private void processPropertyCollection(Method method, Field field, ObjectNode schema, JsonReference jsonRef) throws TypeException {
         schema.put(TAG_TYPE, TAG_ARRAY);
         Class<?> genericClass = null;
         if (method != null) {
@@ -285,7 +290,14 @@ public abstract class JsonSchemaGenerator {
         } else {
             genericClass = field.getClass();
         }
-        schema.put("items", generateSchema(genericClass));
+        if (jsonRef != null) {
+            String value = jsonRef.value();
+            if (value != null && !"".equals(value)) {
+                schema.put("items", createRefSchema(value));
+            }
+        } else {
+            schema.put("items", generateSchema(genericClass));
+        }
     }
 
     protected <T> void processRootAttributes(Class<T> type, ObjectNode schema) {
@@ -326,11 +338,11 @@ public abstract class JsonSchemaGenerator {
         AccessibleObject propertyReflection = field != null ? field : method;
 
         SchemaIgnore ignoreAnn = propertyReflection.getAnnotation(SchemaIgnore.class);
-        if (ignoreAnn != null)
+        if (ignoreAnn != null) {
             return null;
-
+        }
         JsonReference jsonRef = propertyReflection.getAnnotation(JsonReference.class);
-        if (jsonRef != null) {
+        if (jsonRef != null && !Util.isCollection(returnType)) {
             String value = jsonRef.value();
             if (value != null && !"".equals(value)) {
                 return createRefSchema(value);
@@ -396,7 +408,7 @@ public abstract class JsonSchemaGenerator {
 
 
         if (Util.isCollection(returnType)) {
-            processPropertyCollection(method, field, schema);
+            processPropertyCollection(method, field, schema, jsonRef);
         } else {
             schema = generateSchema(returnType);
         }

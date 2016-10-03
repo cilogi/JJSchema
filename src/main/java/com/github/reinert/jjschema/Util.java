@@ -44,6 +44,7 @@ public class Util {
         return Collection.class.isAssignableFrom(type);
     }
 
+    @SuppressWarnings({"unused"})
     public static void saveClass(Class clazz, File rootDir) throws TypeException, IOException {
         JsonSchemaGenerator v4generator = SchemaGeneratorBuilder.draftV4Schema().build();
         JsonNode productSchema = v4generator.generateSchema(clazz);
@@ -73,5 +74,10 @@ public class Util {
             String[] sub = full.split("\\.");
             return sub[sub.length-1];
         }
+    }
+
+    public static String refSchemaForClass(Class clazz) {
+        SchemaFileName ann = (SchemaFileName)clazz.getAnnotation(SchemaFileName.class);
+        return (ann != null) ? ann.value() : null;
     }
 }
