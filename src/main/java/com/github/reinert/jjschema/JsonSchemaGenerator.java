@@ -163,7 +163,9 @@ public abstract class JsonSchemaGenerator {
     }
 
     private String refSchemaForClass(Class type) {
-        return referenceMap.containsKey(type) ? referenceMap.get(type) : Util.refSchemaForClass(type);
+        String s = referenceMap.containsKey(type) ? referenceMap.get(type) : Util.refSchemaForClass(type);
+        LOG.fine("Map for " + type.getName() + " is " + s);
+        return s;
     }
 
     /**

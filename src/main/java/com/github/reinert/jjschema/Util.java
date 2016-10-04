@@ -45,9 +45,8 @@ public class Util {
     }
 
     @SuppressWarnings({"unused"})
-    public static void saveClass(Class clazz, File rootDir) throws TypeException, IOException {
-        JsonSchemaGenerator v4generator = SchemaGeneratorBuilder.draftV4Schema().build();
-        JsonNode productSchema = v4generator.generateSchema(clazz);
+    public static void saveClass(JsonSchemaGenerator generator, Class clazz, File rootDir) throws TypeException, IOException {
+        JsonNode productSchema = generator.generateSchema(clazz);
         String s = JacksonUtils.prettyPrint(productSchema);
         File file = new File(rootDir, nameOf(clazz) + ".json");
         storeBytes(s.getBytes(Charsets.UTF_8), file);
