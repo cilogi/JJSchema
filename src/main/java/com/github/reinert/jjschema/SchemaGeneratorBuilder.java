@@ -19,6 +19,8 @@
 package com.github.reinert.jjschema;
 
 
+import java.util.Map;
+
 /**
  * A SchemaGenerator builder for creating SchemaGenerators considering some options.
  *
@@ -60,6 +62,11 @@ public class SchemaGeneratorBuilder {
         
         public ConfigurationStep processFieldsOnly(boolean processFieldsOnly) {
             generator.processFieldsOnly = processFieldsOnly;
+            return this;
+        }
+
+        public ConfigurationStep referenceMap(Map<Class,String> map) {
+            generator.setReferenceMap(map);
             return this;
         }
         

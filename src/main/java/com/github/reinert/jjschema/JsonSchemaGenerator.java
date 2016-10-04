@@ -52,8 +52,15 @@ public abstract class JsonSchemaGenerator {
     boolean processAnnotatedOnly = false;
     private Set<ManagedReference> forwardReferences;
     private Set<ManagedReference> backReferences;
-    
+
+    protected Map<Class, String> referenceMap;
+
     protected JsonSchemaGenerator() {
+        referenceMap = new HashMap<Class,String>();
+    }
+
+    protected void setReferenceMap(Map<Class,String> map) {
+        referenceMap.putAll(map);
     }
 
     Set<ManagedReference> getForwardReferences() {
@@ -145,7 +152,7 @@ public abstract class JsonSchemaGenerator {
     }
 
     public <T> ObjectNode generateSchema(Class<T> type) throws TypeException {
-        String refSchemaName = Util.refSchemaForClass(type);
+        String refSchemaName = refSchemaForClass(type);
         if (refSchemaName == null) {
             ObjectNode schema = createInstance();
             schema = checkAndProcessType(type, schema);
@@ -153,6 +160,10 @@ public abstract class JsonSchemaGenerator {
         } else {
             return createRefSchema(refSchemaName);
         }
+    }
+
+    private String refSchemaForClass(Class type) {
+        return referenceMap.containsKey(type) ? referenceMap.get(type) : Util.refSchemaForClass(type);
     }
 
     /**
