@@ -164,7 +164,7 @@ public abstract class JsonSchemaGenerator {
 
     private String refSchemaForClass(Class type) {
         String s = referenceMap.containsKey(type) ? referenceMap.get(type) : Util.refSchemaForClass(type);
-        LOG.fine("Map for " + type.getName() + " is " + s);
+        //LOG.fine("Map for " + type.getName() + " is " + s);
         return s;
     }
 
@@ -288,7 +288,7 @@ public abstract class JsonSchemaGenerator {
         schema.put(TAG_TYPE, TAG_ARRAY);
         Class<?> genericClass = null;
         if (method != null) {
-            LOG.info("Method " + method.toString());
+            //LOG.info("Method " + method.toString());
             Type methodType = method.getGenericReturnType();
             if (!ParameterizedType.class.isAssignableFrom(methodType.getClass())) {
                 throw new TypeException("Collection property must be parameterized: " + method.getName());
